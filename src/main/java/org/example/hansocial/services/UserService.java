@@ -34,6 +34,11 @@ public class UserService {
 	}
 
 	public User saveOneUser(User newUser) {
+		List<User> users=getAllUsers();
+		Boolean mail=getAllUsers().stream().anyMatch(u->u.getEmail().equals(newUser.getEmail()));
+		Boolean username=getAllUsers().stream().anyMatch(u->u.getUserName().equals(newUser.getUserName()));
+		if(mail || username)
+			return null;
 		return userRepository.save(newUser);
 	}
 

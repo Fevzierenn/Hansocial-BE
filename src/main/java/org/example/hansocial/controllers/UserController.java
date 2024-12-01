@@ -6,6 +6,7 @@ import org.example.hansocial.responses.UserResponse;
 import org.example.hansocial.services.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.example.hansocial.exceptions.ErrorResponse;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,13 +27,31 @@ public class UserController {
 		return userService.getAllUsers().stream().map(u -> new UserResponse(u)).toList();
 	}
 	
-	@PostMapping
-	public ResponseEntity<Void> createUser(@RequestBody User newUser) {
+//	@PostMapping
+//	public ResponseEntity<?> createUser(@RequestBody User newUser) {
+//		User user = userService.saveOneUser(newUser);
+//		if(user != null)
+//			return new ResponseEntity<>(HttpStatus.OK);
+//		return  ResponseEntity.status(HttpStatus.CONFLICT).body("user already exists");
+//	}
+@PostMapping
+public ResponseEntity<?> createUser(@RequestBody User newUser) {
+	try {
 		User user = userService.saveOneUser(newUser);
-		if(user != null) 
-			return new ResponseEntity<>(HttpStatus.CREATED);
-		return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+		if (user != null) {
+			return ResponseEntity.ok(user); // Başarılı durumda kullanıcı nesnesini döndür
+		}
+		// Conflict durumunda JSON parse edilebilir bir nesne döndür
+		return ResponseEntity
+				.status(HttpStatus.CONFLICT)
+				.body(new ErrorResponse("Kullanıcı zaten mevcut"));
+	} catch (Exception e) {
+		// Diğer olası hatalar için genel hata yanıtı
+		return ResponseEntity
+				.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(new ErrorResponse("Kullanıcı oluşturulurken bir hata meydana geldi"));
 	}
+}
 	
 	@GetMapping("/{userId}")
 	public UserResponse getOneUser(@PathVariable Long userId) {
