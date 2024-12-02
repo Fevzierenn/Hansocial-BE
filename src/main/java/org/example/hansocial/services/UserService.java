@@ -82,6 +82,15 @@ public class UserService {
 		result.addAll(likes);
 		return result;
 	}
-	
-	
+
+
+    public Optional<User> updateUserAvatar(Long userId, int avatar) {
+			User theUser=userRepository.findById(userId).orElseThrow(
+					()-> new RuntimeException("The user not found...")
+			);
+
+			//change avatar user
+			theUser.setAvatar(avatar);
+			return Optional.of(userRepository.save(theUser));
+    }
 }

@@ -10,9 +10,10 @@ import org.example.hansocial.exceptions.ErrorResponse;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
-@CrossOrigin
+@CrossOrigin(origins = "http://localhost:3000")
 @RequestMapping("/users")
 public class UserController {
 	
@@ -80,7 +81,23 @@ public ResponseEntity<?> createUser(@RequestBody User newUser) {
 	public List<Object> getUserActivity(@PathVariable Long userId) {
 		return userService.getUserActivity(userId);
 	}
-	
+
+	@PutMapping("/{userId}/avatar")
+	public ResponseEntity<?> changeUserAvatar(@PathVariable Long userId,
+											  @RequestParam(name = "avatar") int avatarIndex)
+	{
+		Optional<User> updatedUser=userService.updateUserAvatar(userId, avatarIndex);
+
+		if(updatedUser.isPresent())
+		{
+			return new ResponseEntity<>(updatedUser.get(), HttpStatus.OK);
+		}
+		return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+
+	}
+
+
+
 	@ExceptionHandler(UserNotFoundException.class)
 	@ResponseStatus(HttpStatus.NOT_FOUND)
 	private void handleUserNotFound() {

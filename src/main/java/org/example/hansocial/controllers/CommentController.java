@@ -26,6 +26,7 @@ public class CommentController {
 			@RequestParam Optional<Long> postId) {
 		return commentService.getAllCommentsWithParam(userId, postId);
 	}
+
 	
 	@PostMapping
 	public Comment createOneComment(@RequestBody CommentCreateRequest request) {
