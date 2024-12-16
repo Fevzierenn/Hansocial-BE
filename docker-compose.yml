@@ -1,0 +1,28 @@
+services:
+
+
+  hansocial-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hansocialBackendFinal
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: ${DB_URL}
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+
+
+  frontend:
+    build:
+      context: C:/FEC/react apps/hansocial-FE
+      dockerfile: Dockerfile
+    container_name: hansocialFrontendFinal
+    ports:
+      - "3000:3000"
+    depends_on:
+      - hansocial-app
+
+volumes:
+  mysql_data:
