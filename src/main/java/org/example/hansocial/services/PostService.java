@@ -2,6 +2,7 @@ package org.example.hansocial.services;
 
 import org.example.hansocial.entities.Post;
 import org.example.hansocial.entities.User;
+import org.example.hansocial.exceptions.PostNotFoundException;
 import org.example.hansocial.repos.PostRepository;
 import org.example.hansocial.requests.PostCreateRequest;
 import org.example.hansocial.requests.PostUpdateRequest;
@@ -48,9 +49,9 @@ public class PostService {
 	}
 
 	public PostResponse getOnePostByIdWithLikes(Long postId) {
-		Post post = postRepository.findById(postId).orElse(null);
+		Post post = postRepository.findById(postId).orElseThrow(() -> new PostNotFoundException("Post not found"));
 		List<LikeResponse> likes = likeService.getAllLikesWithParam(Optional.ofNullable(null), Optional.of(postId));
-		return new PostResponse(post, likes); 
+		return new PostResponse(post, likes);
 	}
 	
 	public Post createOnePost(PostCreateRequest newPostRequest) {
