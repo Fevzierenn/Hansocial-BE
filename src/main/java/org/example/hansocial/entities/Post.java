@@ -1,7 +1,10 @@
 package org.example.hansocial.entities;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 import java.util.Date;
@@ -10,6 +13,9 @@ import java.util.Date;
 @Entity
 @Table(name="post")
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Post {
 
 	@Id
@@ -28,4 +34,6 @@ public class Post {
 
 	@Temporal(TemporalType.TIMESTAMP)
 	Date createDate;
+
+
 }
