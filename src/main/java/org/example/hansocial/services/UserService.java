@@ -1,15 +1,16 @@
 package org.example.hansocial.services;
 
 import  org.example.hansocial.entities.User;
+import org.example.hansocial.exceptions.UserAlreadyExistsException;
+import org.example.hansocial.exceptions.UserNotFoundException;
 import  org.example.hansocial.repos.CommentRepository;
 import  org.example.hansocial.repos.LikeRepository;
 import  org.example.hansocial.repos.PostRepository;
 import org.example.hansocial.repos.UserRepository;
-
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,11 +35,10 @@ public class UserService {
 	}
 
 	public User saveOneUser(User newUser) {
-		List<User> users=getAllUsers();
-		Boolean mail=getAllUsers().stream().anyMatch(u->u.getEmail().equals(newUser.getEmail()));
-		Boolean username=getAllUsers().stream().anyMatch(u->u.getUserName().equals(newUser.getUserName()));
-		if(mail || username)
-			return null;
+		Boolean mailExists= userRepository.existsByEmailIgnoreCase(newUser.getEmail());
+		Boolean usernameExists= userRepository.existsByUserNameIgnoreCase(newUser.getUserName());
+		if(mailExists || usernameExists)
+			throw new UserAlreadyExistsException("User already exists with this email or username." );
 		return userRepository.save(newUser);
 	}
 
@@ -74,7 +74,7 @@ public class UserService {
 	public List<Object> getUserActivity(Long userId) {
 		List<Long> postIds = postRepository.findTopByUserId(userId);
 		if(postIds.isEmpty())
-			return null;
+			return Collections.emptyList();
 		List<Object> comments = commentRepository.findUserCommentsByPostId(postIds);
 		List<Object> likes = likeRepository.findUserLikesByPostId(postIds);
 		List<Object> result = new ArrayList<>();
@@ -84,13 +84,12 @@ public class UserService {
 	}
 
 
-    public Optional<User> updateUserAvatar(Long userId, int avatar) {
-			User theUser=userRepository.findById(userId).orElseThrow(
-					()-> new RuntimeException("The user not found...")
-			);
-
+    public User updateUserAvatar(Long userId, int avatar) {
+		User theUser = userRepository.findById(userId).orElseThrow(
+				() -> new UserNotFoundException("User not found")
+		);
 			//change avatar user
 			theUser.setAvatar(avatar);
-			return Optional.of(userRepository.save(theUser));
+			return userRepository.save(theUser);
     }
 }

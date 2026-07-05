@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Users")
 public class UserController {
 
-    private UserService userService;
+    private final UserService userService;
 
     public UserController(UserService userService) {
         this.userService = userService;
@@ -31,26 +31,16 @@ public class UserController {
         return userService
             .getAllUsers()
             .stream()
-            .map(u -> new UserResponse(u))
+            .map(UserResponse::new)
             .toList();
     }
 
     @PostMapping
     @Operation(summary = "Create a new user")
     public ResponseEntity<?> createUser(@RequestBody User newUser) {
-        try {
             User user = userService.saveOneUser(newUser);
-            if (user != null) return ResponseEntity.ok(user);
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(
-                new ErrorResponse("Kullanıcı zaten mevcut")
-            );
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                new ErrorResponse(
-                    "Kullanıcı oluşturulurken bir hata meydana geldi"
-                )
-            );
-        }
+            return ResponseEntity.status(HttpStatus.CREATED).body(user);
+
     }
 
     @GetMapping("/{userId}")
@@ -84,21 +74,17 @@ public class UserController {
         return userService.getUserActivity(userId);
     }
 
-    @PutMapping("/{userId}/avatar")
+    @PatchMapping("/{userId}/avatar")
     @Operation(summary = "Change user avatar")
     public ResponseEntity<?> changeUserAvatar(
         @PathVariable Long userId,
         @RequestParam(name = "avatar") int avatarIndex
     ) {
-        Optional<User> updatedUser = userService.updateUserAvatar(
+        User updatedUser = userService.updateUserAvatar(
             userId,
             avatarIndex
         );
-        if (updatedUser.isPresent()) return new ResponseEntity<>(
-            updatedUser.get(),
-            HttpStatus.OK
-        );
-        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>(updatedUser, HttpStatus.OK);
     }
 
     @ExceptionHandler(UserNotFoundException.class)
