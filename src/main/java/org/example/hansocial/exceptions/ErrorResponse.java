@@ -3,8 +3,8 @@ package org.example.hansocial.exceptions;
 import java.time.LocalDateTime;
 
 public class ErrorResponse {
-    private String message;
-    private LocalDateTime timestamp;
+    private final String message;
+    private final LocalDateTime timestamp;
     private Throwable throwable;
     public ErrorResponse(String message) {
         this.message = message;
