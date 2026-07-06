@@ -1,6 +1,7 @@
 package org.example.hansocial.exceptions;
 
 
+import org.example.hansocial.entities.Like;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -26,6 +27,19 @@ public class GlobalExceptionHandler {
         ErrorResponse error = new ErrorResponse(ex.getMessage(), ex.getCause());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
+
+    @ExceptionHandler(CommentNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handlePostNotFound(CommentNotFoundException ex) {
+        ErrorResponse error = new ErrorResponse(ex.getMessage(), ex.getCause());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(LikeNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handlePostNotFound(LikeNotFoundException ex) {
+        ErrorResponse error = new ErrorResponse(ex.getMessage(), ex.getCause());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ErrorResponse> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
