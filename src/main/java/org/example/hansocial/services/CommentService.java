@@ -1,78 +1,96 @@
 package org.example.hansocial.services;
 
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import org.example.hansocial.entities.Comment;
 import org.example.hansocial.entities.Post;
 import org.example.hansocial.entities.User;
+import org.example.hansocial.exceptions.CommentNotFoundException;
 import org.example.hansocial.repos.CommentRepository;
 import org.example.hansocial.requests.CommentCreateRequest;
 import org.example.hansocial.requests.CommentUpdateRequest;
 import org.example.hansocial.responses.CommentResponse;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
 @Service
 public class CommentService {
 
-	private CommentRepository commentRepository;
-	private UserService userService;
-	private PostService postService;
+    private final CommentRepository commentRepository;
+    private final UserService userService;
+    private final PostService postService;
 
-	public CommentService(CommentRepository commentRepository, UserService userService, 
-			PostService postService) {
-		this.commentRepository = commentRepository;
-		this.userService = userService;
-		this.postService = postService;
-	}
+    public CommentService(
+        CommentRepository commentRepository,
+        UserService userService,
+        PostService postService
+    ) {
+        this.commentRepository = commentRepository;
+        this.userService = userService;
+        this.postService = postService;
+    }
 
-	public List<CommentResponse> getAllCommentsWithParam(Optional<Long> userId, Optional<Long> postId) {
-		List<Comment> comments;
-		if(userId.isPresent() && postId.isPresent()) {
-			comments = commentRepository.findByUserIdAndPostId(userId.get(), postId.get());
-		}else if(userId.isPresent()) {
-			comments = commentRepository.findByUserId(userId.get());
-		}else if(postId.isPresent()) {
-			comments = commentRepository.findByPostId(postId.get());
-		}else
-			comments = commentRepository.findAll();
-		return comments.stream().map(comment -> new CommentResponse(comment)).collect(Collectors.toList());
-	}
+    public List<CommentResponse> getAllCommentsWithParam(
+        Optional<Long> userId,
+        Optional<Long> postId
+    ) {
+        List<Comment> comments;
+        if (userId.isPresent() && postId.isPresent()) {
+            comments = commentRepository.findByUserIdAndPostId(
+                userId.get(),
+                postId.get()
+            );
+        } else if (userId.isPresent()) {
+            comments = commentRepository.findByUserId(userId.get());
+        } else if (postId.isPresent()) {
+            comments = commentRepository.findByPostId(postId.get());
+        } else comments = commentRepository.findAll();
+        return comments
+            .stream()
+            .map(CommentResponse::new)
+            .collect(Collectors.toList());
+    }
 
-	public Comment getOneCommentById(Long commentId) {
-		return commentRepository.findById(commentId).orElse(null);
-	}
+    // Entity-returning — for internal use by other services
+    public Comment getSingleCommentById(Long commentId) {
+        return commentRepository
+            .findById(commentId)
+            .orElseThrow(() ->
+                new CommentNotFoundException(
+                    "Comment with id " + commentId + " not found."
+                )
+            );
+    }
 
-	public Comment createOneComment(CommentCreateRequest request) {
-		User user = userService.getOneUserById(request.getUserId());
-		Post post = postService.getOnePostById(request.getPostId());
-		if(user != null && post != null) {
-			Comment commentToSave = new Comment();
-			commentToSave.setId(request.getId());
-			commentToSave.setPost(post);
-			commentToSave.setUser(user);
-			commentToSave.setText(request.getText());
-			commentToSave.setCreateDate(new Date());
-			return commentRepository.save(commentToSave);
-		}else		
-			return null;
-	}
+    // DTO-returning — for the controller
+    public CommentResponse getSingleCommentResponseById(Long commentId) {
+        return new CommentResponse(getSingleCommentById(commentId));
+    }
 
-	public Comment updateOneCommentById(Long commentId, CommentUpdateRequest request) {
-		Optional<Comment> comment = commentRepository.findById(commentId);
-		if(comment.isPresent()) {
-			Comment commentToUpdate = comment.get();
-			commentToUpdate.setText(request.getText());
-			return commentRepository.save(commentToUpdate);
-		}else
-			return null;
-	}
+    public CommentResponse createComment(CommentCreateRequest request) {
+        User user = userService.getOneUserById(request.getUserId());
+        Post post = postService.getOnePostById(request.getPostId());
+        Comment commentToSave = Comment.builder()
+            .post(post)
+            .user(user)
+            .text(request.getText())
+            .createDate(new Date())
+            .build();
+        return new CommentResponse(commentRepository.save(commentToSave));
+    }
 
-	public void deleteOneCommentById(Long commentId) {
-		commentRepository.deleteById(commentId);
-	}
-	
-	
+    public CommentResponse updateSingleCommentById(
+        Long commentId,
+        CommentUpdateRequest request
+    ) {
+        Comment comment = getSingleCommentById(commentId);
+        comment.setText(request.getText());
+        return new CommentResponse(commentRepository.save(comment));
+    }
+
+    public void deleteOneCommentById(Long commentId) {
+        getSingleCommentById(commentId); // throws CommentNotFoundException if not found
+        commentRepository.deleteById(commentId);
+    }
 }
