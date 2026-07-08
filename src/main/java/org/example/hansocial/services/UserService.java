@@ -7,6 +7,7 @@ import  org.example.hansocial.repos.CommentRepository;
 import  org.example.hansocial.repos.LikeRepository;
 import  org.example.hansocial.repos.PostRepository;
 import org.example.hansocial.repos.UserRepository;
+import org.example.hansocial.responses.UserResponse;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 import java.util.ArrayList;
@@ -17,10 +18,10 @@ import java.util.Optional;
 @Service
 public class UserService {
 
-	UserRepository userRepository;
-	LikeRepository likeRepository;
-	CommentRepository commentRepository;
-	PostRepository postRepository;
+	private final UserRepository userRepository;
+	private final LikeRepository likeRepository;
+	private final CommentRepository commentRepository;
+	private final PostRepository postRepository;
 
 	public UserService(UserRepository userRepository, LikeRepository likeRepository, 
 			CommentRepository commentRepository, PostRepository postRepository) {
@@ -30,34 +31,35 @@ public class UserService {
 		this.postRepository = postRepository;
 	}
 
-	public List<User> getAllUsers() {
+	public List<UserResponse> getAllUsers() {
+		return userRepository.findAll().stream().map(UserResponse::new).toList();
+	}
+	public List<User> getUsers() {
 		return userRepository.findAll();
 	}
 
-	public User saveOneUser(User newUser) {
+	public UserResponse saveOneUser(User newUser) {
 		Boolean mailExists= userRepository.existsByEmailIgnoreCase(newUser.getEmail());
 		Boolean usernameExists= userRepository.existsByUserNameIgnoreCase(newUser.getUserName());
 		if(mailExists || usernameExists)
 			throw new UserAlreadyExistsException("User already exists with this email or username." );
-		return userRepository.save(newUser);
+		return new UserResponse(userRepository.save(newUser));
 	}
 
-	public User getOneUserById(Long userId) {
-		return userRepository.findById(userId).orElse(null);
+	public UserResponse getOneUserById(Long userId) {
+			User user= userRepository.findById(userId).orElseThrow(()-> new UserNotFoundException("User with id " + userId + " not found."));
+			return new UserResponse(user);
+	}
+	public User getUserById(Long userId) {
+		return userRepository.findById(userId).orElseThrow(()-> new UserNotFoundException("User with id " + userId + " not found."));
 	}
 
-	public User updateOneUser(Long userId, User newUser) {
-		Optional<User> user = userRepository.findById(userId);
-		if(user.isPresent()) {
-			User foundUser = user.get();
-			foundUser.setUserName(newUser.getUserName());
-			foundUser.setPassword(newUser.getPassword());
-			foundUser.setAvatar(newUser.getAvatar());
-			userRepository.save(foundUser);
-			return foundUser;
-		}else
-			return null;
-	}
+	public UserResponse updateUserProfile(Long userId, Optional<String> userName, Optional<Integer> avatar) {
+		User foundedUser = userRepository.findById(userId).orElseThrow(()-> new UserNotFoundException("User not found with this id: "+ userId));
+        userName.ifPresent(foundedUser::setUserName);
+		avatar.ifPresent(foundedUser::setAvatar);
+			return new UserResponse(userRepository.save(foundedUser));
+		}
 
 	public void deleteById(Long userId) {
 		try {
@@ -66,11 +68,7 @@ public class UserService {
 			System.out.println("User "+userId+" doesn't exist"); //istersek loglayabiliriz
 		}
 	}
-
-	public User getOneUserByUserName(String userName) {
-		return userRepository.findByUserName(userName);
-	}
-
+	
 	public List<Object> getUserActivity(Long userId) {
 		List<Long> postIds = postRepository.findTopByUserId(userId);
 		if(postIds.isEmpty())
@@ -84,12 +82,12 @@ public class UserService {
 	}
 
 
-    public User updateUserAvatar(Long userId, int avatar) {
+    public UserResponse updateUserAvatar(Long userId, int avatar) {
 		User theUser = userRepository.findById(userId).orElseThrow(
 				() -> new UserNotFoundException("User not found")
 		);
 			//change avatar user
 			theUser.setAvatar(avatar);
-			return userRepository.save(theUser);
+			return new UserResponse(userRepository.save(theUser));
     }
 }
