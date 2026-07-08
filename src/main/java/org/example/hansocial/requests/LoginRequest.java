@@ -8,8 +8,6 @@ import javax.management.ConstructorParameters;
 @Data
 @AllArgsConstructor
 public class LoginRequest {
-
-
     private String email;
     private String password;
 }

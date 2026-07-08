@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Likes")
 public class LikeController {
 
-    private LikeService likeService;
+    private final LikeService likeService;
 
     public LikeController(LikeService likeService) {
         this.likeService = likeService;
