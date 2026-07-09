@@ -1,64 +1,77 @@
 package org.example.hansocial.services;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import org.example.hansocial.entities.Like;
 import org.example.hansocial.entities.Post;
 import org.example.hansocial.entities.User;
+import org.example.hansocial.exceptions.LikeNotFoundException;
 import org.example.hansocial.repos.LikeRepository;
 import org.example.hansocial.requests.LikeCreateRequest;
 import org.example.hansocial.responses.LikeResponse;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
 @Service
 public class LikeService {
 
-	private LikeRepository likeRepository;
-	private UserService userService;
-	private PostService postService;
+    private final LikeRepository likeRepository;
+    private final UserService userService;
+    private final PostService postService;
 
-	public LikeService(LikeRepository likeRepository, UserService userService, 
-			PostService postService) {
-		this.likeRepository = likeRepository;
-		this.userService = userService;
-		this.postService = postService;
-	}
+    public LikeService(
+        LikeRepository likeRepository,
+        UserService userService,
+        PostService postService
+    ) {
+        this.likeRepository = likeRepository;
+        this.userService = userService;
+        this.postService = postService;
+    }
 
-	public List<LikeResponse> getAllLikesWithParam(Optional<Long> userId, Optional<Long> postId) {
-		List<Like> list;
-		if(userId.isPresent() && postId.isPresent()) {
-			list = likeRepository.findByUserIdAndPostId(userId.get(), postId.get());
-		}else if(userId.isPresent()) {
-			list = likeRepository.findByUserId(userId.get());
-		}else if(postId.isPresent()) {
-			list = likeRepository.findByPostId(postId.get());
-		}else
-			list = likeRepository.findAll();
-		return list.stream().map(like -> new LikeResponse(like)).collect(Collectors.toList());
-	}
+    public List<LikeResponse> getAllLikesWithParam(
+        Optional<Long> userId,
+        Optional<Long> postId
+    ) {
+        Long uId = userId.orElse(null);
+        Long pId = postId.orElse(null);
+        List<Like> list = likeRepository.findByUserIdAndPostIdOptional(
+            uId,
+            pId
+        );
+        return list
+            .stream()
+            .map(LikeResponse::new)
+            .collect(Collectors.toList());
+    }
 
-	public Like getOneLikeById(Long LikeId) {
-		return likeRepository.findById(LikeId).orElse(null);
-	}
+    // Entity-returning for internal use of other services
+    public Like getLikeById(Long likeId) {
+        return likeRepository
+            .findById(likeId)
+            .orElseThrow(() ->
+                new LikeNotFoundException(
+                    "Like with id " + likeId + " not found."
+                )
+            );
+    }
 
-	public Like createOneLike(LikeCreateRequest request) {
-		User user = userService.getOneUserById(request.getUserId());
-		Post post = postService.getOnePostById(request.getPostId());
-		if(user != null && post != null) {
-			Like likeToSave = new Like();
-			likeToSave.setId(request.getId());
-			likeToSave.setPost(post);
-			likeToSave.setUser(user);
-			return likeRepository.save(likeToSave);
-		}else		
-			return null;
-	}
+    // DTO-returning — for the controller
+    public LikeResponse getLikeResponseById(Long likeId) {
+        return new LikeResponse(getLikeById(likeId));
+    }
 
-	public void deleteOneLikeById(Long likeId) {
-		likeRepository.deleteById(likeId);
-	}
-	
-	
+    public LikeResponse createOneLike(LikeCreateRequest request) {
+        User user = userService.getUserById(request.getUserId());
+        Post post = postService.getOnePostById(request.getPostId());
+        Like likeToSave = new Like();
+        likeToSave.setPost(post);
+        likeToSave.setUser(user);
+        return new LikeResponse(likeRepository.save(likeToSave));
+    }
+
+    public void deleteOneLikeById(Long likeId) {
+        getLikeById(likeId); // throws LikeNotFoundException if not found
+        likeRepository.deleteById(likeId);
+    }
 }

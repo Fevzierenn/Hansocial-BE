@@ -4,10 +4,11 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.Optional;
-import org.example.hansocial.entities.Like;
 import org.example.hansocial.requests.LikeCreateRequest;
 import org.example.hansocial.responses.LikeResponse;
 import org.example.hansocial.services.LikeService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -33,19 +34,24 @@ public class LikeController {
 
     @PostMapping
     @Operation(summary = "Create a like")
-    public Like createOneLike(@RequestBody LikeCreateRequest request) {
-        return likeService.createOneLike(request);
+    public ResponseEntity<LikeResponse> createOneLike(
+        @RequestBody LikeCreateRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+            likeService.createOneLike(request)
+        );
     }
 
     @GetMapping("/{likeId}")
     @Operation(summary = "Get like by ID")
-    public Like getOneLike(@PathVariable Long likeId) {
-        return likeService.getOneLikeById(likeId);
+    public ResponseEntity<LikeResponse> getOneLike(@PathVariable Long likeId) {
+        return ResponseEntity.ok(likeService.getLikeResponseById(likeId));
     }
 
     @DeleteMapping("/{likeId}")
     @Operation(summary = "Delete a like")
-    public void deleteOneLike(@PathVariable Long likeId) {
+    public ResponseEntity<Void> deleteOneLike(@PathVariable Long likeId) {
         likeService.deleteOneLikeById(likeId);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -9,11 +9,13 @@ import java.util.List;
 
 public interface LikeRepository extends JpaRepository<Like, Long> {
 
-	List<Like> findByUserIdAndPostId(Long userId, Long postId);
-
-	List<Like> findByUserId(Long userId);
-
-	List<Like> findByPostId(Long postId);
+	@Query("SELECT l FROM Like l WHERE " +
+			"(:userId IS NULL OR l.user.id = :userId) AND " +
+			"(:postId IS NULL OR l.post.id = :postId)")
+	List<Like> findByUserIdAndPostIdOptional(
+			@Param("userId") Long userId,
+			@Param("postId") Long postId
+	);
 
 	@Query(value = 	"select 'liked', l.post_id, u.avatar, u.user_name from "
 			+ "p_like l left join user u on u.id = l.user_id "
