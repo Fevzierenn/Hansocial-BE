@@ -1,22 +1,18 @@
 package org.example.hansocial.services;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.example.hansocial.entities.Like;
 import org.example.hansocial.entities.Post;
 import org.example.hansocial.entities.User;
 import org.example.hansocial.exceptions.PostNotFoundException;
-import org.example.hansocial.exceptions.UserNotFoundException;
 import org.example.hansocial.repos.LikeRepository;
 import org.example.hansocial.repos.PostRepository;
 import org.example.hansocial.requests.PostCreateRequest;
 import org.example.hansocial.requests.PostUpdateRequest;
 import org.example.hansocial.responses.LikeResponse;
 import org.example.hansocial.responses.PostResponse;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -79,9 +75,7 @@ public class PostService {
     }
 
 	public Post createOnePost(PostCreateRequest newPostRequest) {
-		User user = userService.getOneUserById(newPostRequest.getUserId());
-		if(user == null)
-			throw new UserNotFoundException("User not found with id " + newPostRequest.getUserId());
+		User user = userService.getUserById(newPostRequest.getUserId());
 		Post toSave = Post.builder()
 				.text(newPostRequest.getText())
 				.title(newPostRequest.getTitle())
@@ -91,15 +85,11 @@ public class PostService {
 	}
 
     public Post updateOnePostById(Long postId, PostUpdateRequest updatePost) {
-        Optional<Post> post = postRepository.findById(postId);
-        if (post.isPresent()) {
-            Post toUpdate = post.get();
-            toUpdate.setText(updatePost.getText());
-            toUpdate.setTitle(updatePost.getTitle());
-            postRepository.save(toUpdate);
-            return toUpdate;
-        }
-        return null;
+        Post post = postRepository.findById(postId).orElseThrow(()->  new PostNotFoundException("Post not exists for an update"));
+        post.setText(updatePost.getText());
+            post.setTitle(updatePost.getTitle());
+            postRepository.save(post);
+            return post;
     }
 
     public void deleteOnePostById(Long postId) {
